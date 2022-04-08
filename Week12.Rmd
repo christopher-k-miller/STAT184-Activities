@@ -53,11 +53,11 @@ tail(golfdata3)
 ### Boxplot of Shots Gained Total based on Made or Missed Cut and Boxplot of Greens Hit During Regulation based on Made or Missed Cut
 
 ```{r message=FALSE, warning=FALSE}
-ggplot(golfdata3, aes(y=SGTOT,color=Cut)) + 
+ggplot(golfdata3, aes(x=Cut, y=SGTOT,color=Cut)) + 
   geom_boxplot()+
   ylab("Shots Gained Total")+
   ggtitle("Boxplot Shots Gained Total")
-ggplot(golfdata3, aes(y=GIR,color=Cut)) + 
+ggplot(golfdata3, aes(x=Cut, y=GIR,color=Cut)) + 
   geom_boxplot()+
    ylab("Greens in Regulation")+
   ggtitle("Boxplot Greens Hit in Regulation")
