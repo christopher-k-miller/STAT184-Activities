@@ -1,0 +1,68 @@
+---
+title: "Regular Expressions 2"
+author: "Chris Miller"
+date: "2/25/2022"
+output: html_notebook
+---
+
+### Load Packages and Data 
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+options(dplyr.summarise.inform = FALSE)
+```
+
+### Bring in Data
+
+```{r message=FALSE, warning=FALSE}
+ golfdata <- read.delim("Data_RegEx2.txt", header=FALSE, quote="",fileEncoding = "UTF-8")
+```
+
+### Data Cleaning (First Iteration)
+
+```{r message=FALSE, warning=FALSE}
+golfdata2 <- as.data.frame(matrix(golfdata$V1,ncol = 16,byrow = T)) 
+
+golfdata2 <- rename(golfdata2, Position = "V1",Player = "V2",FinalScore = "V3",THRU = "V4",TODAY = "V5",SGPutt = "V6",SGARG = "V7",SGAPP = "V8",SGOTT = "V9",SGT2G = "V10",SGTOT = "V11",DrDist = "V12",DrAcc = "V13",GIR = "V14",Fairprox = "V15",Scrambling = "V16")
+
+golfdata2 <- separate(golfdata2, Player, c("LastName1", "FirstName"), sep = "^\\S*\\K\\s+")
+golfdata2 <- separate(golfdata2, FirstName, c("LastName2", "FirstName"), sep = "^\\S*\\K\\s+")
+golfdata2 <- unite(golfdata2, col =  "FirstName", c('FirstName', 'LastName2'), sep = " ", remove =TRUE, na.rm = TRUE)
+golfdata2 <- separate(golfdata2, FirstName, c("FirstName", "LastName2"), sep = "^\\S*\\K\\s+")
+golfdata2 <- unite(golfdata2, col =  "Player", c('FirstName', 'LastName1','LastName2'), sep = " ", remove =TRUE, na.rm = TRUE)
+
+golfdata2 <- filter(golfdata2, Position != "WD")
+
+golfdata2 <- na_if(golfdata2, "—") 
+
+head(golfdata2)
+tail(golfdata2)
+```
+
+### Data Cleaning (Second Iteration)
+
+```{r message=FALSE, warning=FALSE}
+golfdata2$SGTOT <- as.numeric(golfdata2$SGTOT)
+golfdata2$GIR <- as.numeric(parse_number(golfdata2$GIR))
+golfdata3 <-  mutate(golfdata2, Cut = ifelse(Position == "CUT", "Missed Cut", "Made Cut"))
+
+head(golfdata3)
+tail(golfdata3)
+```
+
+### Boxplot of Shots Gained Total based on Made or Missed Cut and Boxplot of Greens Hit During Regulation based on Made or Missed Cut
+
+```{r message=FALSE, warning=FALSE}
+ggplot(golfdata3, aes(y=SGTOT,color=Cut)) + 
+  geom_boxplot()+
+  ylab("Shots Gained Total")+
+  ggtitle("Boxplot Shots Gained Total")
+ggplot(golfdata3, aes(y=GIR,color=Cut)) + 
+  geom_boxplot()+
+   ylab("Greens in Regulation")+
+  ggtitle("Boxplot Greens Hit in Regulation")
+```
+
+In the boxplot of shots gained total we can see that the median of the shots gained total for players who made the cut (around 1.2) is higher than those that missed the cut (around -1.8). The IQR of both groups look similar, for the players that made the cut, the data seems to follow a normal distribution, but for the players that didn't make the cut their shots gained total data seems to have negative skew with one possible outlier.
+
+In the boxplot of greens in regulation we can see that the median of the greens in regulation for players who made the cut (around 68) is higher than those that missed the cut (around 64), but not by much. The IQR of the two groups seem similar. Both groups also look like they follow a normal distribution with possible negative skewness with the missed cut group, there is one outlier in the missed cut group.
