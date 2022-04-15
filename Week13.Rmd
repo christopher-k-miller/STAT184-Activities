@@ -1,0 +1,102 @@
+---
+title: "Regular Expressions 3"
+author: "Chris Miller"
+date: "2/25/2022"
+output: html_notebook
+---
+
+### Load Packages and Data
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+options(dplyr.summarise.inform = FALSE)
+act3 <- read.csv("Data_ReGeX3.csv", header=T)
+```
+
+### Create New variable year Based on First Four Digits of tourny_id
+
+```{r message=FALSE, warning=FALSE}
+act3 <- mutate(act3, year = str_extract(act3$tourney_id,"^\\d{4}"))
+
+head(act3)
+tail(act3)
+```
+
+### Separate ‘score’ variable into 5 columns based on ‘score’ results
+
+```{r message=FALSE, warning=FALSE}
+act3 <- mutate(act3, score2 = gsub(pattern="\\(\\d+)",replacement="", act3$score))
+act3 <- mutate(act3, score3 = gsub(pattern="RET",replacement="", act3$score2))
+act3 <- separate(act3, score3, c("Set.1", "Set.2","Set.3","Set.4","Set.5"), sep = " ", remove = FALSE)
+act3 <- select(act3,tourney_id, tourney_name, winner_ioc, winner_age,score,minutes,year,Set.1,Set.2,Set.3,Set.4,Set.5)
+act3<- act3[c('tourney_id', 'tourney_name', 'winner_ioc', 'winner_age','score','minutes','year',"Set.1", "Set.2","Set.3","Set.4","Set.5")]
+
+head(act3)
+tail(act3)
+```
+
+### Create new variable ’sets.played’by counting non-NAs in Set.1 through Set.5
+
+```{r message=FALSE, warning=FALSE}
+act3 <- act3 %>% mutate(setsplayed = rowSums(!is.na(select(.,Set.1,Set.2,Set.3,Set.4,Set.5))))
+act3 <- select(act3,tourney_id, tourney_name, winner_ioc, winner_age,score,minutes,year,setsplayed)
+head(act3)
+tail(act3)
+```
+
+### Graph1:Density Plot of Minutes Played by Number of Sets Played
+
+```{r message=FALSE, warning=FALSE}
+ggplot(act3, aes(x=minutes,fill=as.character(setsplayed)))+
+  geom_density(color=NA)+
+  theme(legend.position="top")+
+  labs(fill ="Sets Played",x="Minutes Played",title="Density Plots of Minutes Played Per Number of Sets Played")
+```
+
+This density plot shows the density of minutes played based on the amount of sets played. We can see that the more sets that are played the more minutes that are played. There is some overlap between the densitites but the highest density of minutes played for each sets played is distinct. The highest density of minutes played for five sets played is about 210 with a density of about 0.124.
+
+### Graph2:Boxplot of Winner’s Age by Tournament Name
+
+```{r message=FALSE, warning=FALSE}
+act3$tourney_name <- gsub(pattern="Us Open",replacement="US Open", act3$tourney_name)
+ggplot(act3, aes(x=tourney_name, y=winner_age,color=tourney_name))+
+  geom_boxplot()+
+  labs(y ="Age of Winner",x="Tournament Name",title="Boxplot Age of Winner in Grand Slam Events", color="Tournament Name")
+```
+
+These side-by-side boxplots give information about the age of the winner based on the Grand Slam tournament. The median age of winner is all similar with Wimbledon being the oldest and Australian Open being the youngest. There is outliers on the older end in all of the different Grand Slam tournaments. All of the Grand Slam tournament age winner distributions look normal and all the IQR's are similar.
+
+### Graph3:Counts of Matches Won by Top 5 IOC Membership per Tournament
+
+```{r message=FALSE, warning=FALSE}
+act4 <- act3 %>%
+  group_by(tourney_name,winner_ioc) %>%
+  summarise(wins = n())%>%
+  mutate(rank_wins = rank(desc(wins))) %>%
+  filter(rank_wins <= 5)
+ggplot(act4, aes(x=winner_ioc, y=wins))+
+  geom_point()+
+  labs(y ="Tournaments Won",x="Winners Olympic Membership",title="Top 5 Olympic Memberships per Tournament") + 
+  facet_grid(tourney_name ~ .) +
+  theme_bw()
+```
+
+These stacked boxplots show the top 5 best performing countries based on the Grand Slam. We can see that France outperforms every country in every Grand Slam. In the Roland Garros and the US Open, Argentina is in the top 5, but is on the lower end of the five. Italy is only in the top 5 for the Roland Garros and their tournament wins are very low, about (120).
+
+### Graph4:Counts of Matches Won by Top 2 IOC Membership per Year
+
+```{r message=FALSE, warning=FALSE}
+act5 <- act3 %>%
+  group_by(year,winner_ioc) %>%
+  summarise(wins = n())%>%
+  mutate(rank_wins = rank(desc(wins))) %>%
+  filter(rank_wins <= 2)
+ggplot(act5, aes(x=year, y=wins,color=winner_ioc))+
+  geom_point()+
+  labs(y ="Tournaments Won",x="Year",title="Top 2 Olympic Memberships per Year",color="Olympic Membership") + 
+  theme_bw()
+```
+
+This plot shows the top 2 best performing countries in the years 2010-2019. In all these years the top 2 countries are either Spain, France, or United States. Out of any year the best performance was France in 2012. USA only appears twice and only is the best in 2018. 2017 had the least tournament wins for the best country with about 70 tournament wins.
+
+Link for GitHub - []
